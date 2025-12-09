@@ -1,7 +1,26 @@
 # 🗄️ | inventorETB
-**inventorETB** is a Shopify inventory compiler that compiles the current value of the inventory using different metrics. 
+**inventorETB** is a Shopify inventory compiler that compiles the current value of the inventory using different metrics.
 
-# 🚀 | Usage
+# 🌐 | Web Version (Recommended)
+
+The easiest way to use inventorETB is through the web interface - no installation required!
+
+**👉 [Open inventorETB Web App](https://your-username.github.io/inventorETB/)**
+
+### How to Use:
+1. Export your inventory data from Shopify (see instructions below)
+2. Open the web app link above
+3. Upload your CSV file
+4. Click "Process Inventory"
+5. Download your filtered reports and summary
+
+That's it! No Python, no setup, just drag and drop.
+
+---
+
+# 🐍 | Python Version (Alternative)
+
+If you prefer to run this locally with Python:
 
 ### Make sure you have the following installed:
 - [VS Code](https://code.visualstudio.com/Download)
@@ -61,12 +80,24 @@ python processQL.py
 # 🛠️ | Project Structure
 ```
 inventorETB/
-│── processQL.py       # Main processing script
-│── config.py          # Configurations for processQL.py
-│── requirements.txt   # Project Dependencies
-│── README.md          # Documentation
+│── index.html              # Web application (GitHub Pages)
+│── processQL.py            # Main processing script (Python)
+│── config.py               # Configurations for Python version
+│── requirements.txt        # Python dependencies
+│── .github/workflows/      # GitHub Actions for auto-deployment
+│── README.md               # Documentation
 ```
 
+# 🔧 | Setting Up GitHub Pages
+
+The web version is automatically deployed via GitHub Actions. To enable it:
+
+1. Go to your repository Settings → Pages
+2. Under "Source", select "GitHub Actions"
+3. Push any changes to the `main` branch - the site will auto-deploy
+4. Your app will be available at: `https://your-username.github.io/inventorETB/`
+
+The workflow file (`.github/workflows/deploy.yml`) is already configured and will run automatically on every push to main.
 
 # 🤝 | Contributing
 Pull requests are welcome! For major changes, please open an issue first to discuss what you’d like to add or change.

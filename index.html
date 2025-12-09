@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>inventorETB - Shopify Inventory Compiler</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f1ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #764ba2;
+            background: #e8e9ff;
+            transform: scale(1.02);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .process-btn {
+            background: #10b981;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .process-btn:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .process-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .config-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .config-header h2 {
+            color: #333;
+        }
+
+        .toggle-config {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .config-content {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .config-content.collapsed {
+            display: none;
+        }
+
+        .range-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .range-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .range-details {
+            font-size: 14px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        .progress {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #0ea5e9;
+            display: none;
+        }
+
+        .progress.show {
+            display: block;
+        }
+
+        .progress-text {
+            color: #0c4a6e;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0f2fe;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .download-section {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #10b981;
+        }
+
+        .download-btn {
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .summary {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .file-name {
+            color: #059669;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        .info-box p {
+            color: #92400e;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ inventorETB</h1>
+        <p class="subtitle">Shopify Inventory Compiler - Process your inventory data in seconds</p>
+
+        <div class="info-box">
+            <p><strong>Instructions:</strong></p>
+            <p>1. Export your inventory from Shopify using the ShopifyQL query (see README.md)</p>
+            <p>2. Upload the CSV file below</p>
+            <p>3. Review or modify the configuration ranges (optional)</p>
+            <p>4. Click "Process Inventory" to generate filtered reports</p>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <h3>Upload Inventory CSV</h3>
+            <p style="color: #666; margin: 10px 0;">Drag and drop your file here, or click to browse</p>
+            <input type="file" id="csvFile" accept=".csv" />
+            <button class="upload-btn" onclick="document.getElementById('csvFile').click()">Choose File</button>
+            <p id="fileName" style="margin-top: 15px; color: #667eea; font-weight: 600;"></p>
+        </div>
+
+        <div class="config-section">
+            <div class="config-header">
+                <h2>Configuration Ranges</h2>
+                <button class="toggle-config" onclick="toggleConfig()">Show/Hide Config</button>
+            </div>
+            <div class="config-content collapsed" id="configContent">
+                <p style="color: #666; margin-bottom: 15px;">These are the default ranges from your config. They will be used for processing.</p>
+                <div id="rangesList"></div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="process-btn" id="processBtn" disabled onclick="processInventory()">Process Inventory</button>
+        </div>
+
+        <div class="progress" id="progress">
+            <div class="progress-text" id="progressText">Processing...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <h2 style="color: #333; margin-bottom: 20px;">Results</h2>
+            <div class="download-section">
+                <h3 style="color: #059669; margin-bottom: 15px;">Download Files</h3>
+                <div id="downloadButtons"></div>
+            </div>
+            <h3 style="color: #333; margin-bottom: 15px;">Summary Report</h3>
+            <div class="summary" id="summary"></div>
+        </div>
+    </div>
+
+    <script>
+        // Default configuration from config.py
+        const DEFAULT_RANGES = [
+            // ==== MTG Singles ====
+            {"name": "MTG Singles - Under and Including $0.50", "max": 0.5, "collection": ["MTG Singles"]},
+            {"name": "MTG Singles - $0.51 to $3.00", "min": 0.51, "max": 2.99, "collection": ["MTG Singles"]},
+            {"name": "MTG Singles - $3.01 to $10.00", "min": 3, "max": 9.99, "collection": ["MTG Singles"]},
+            {"name": "MTG Singles - Over $10.00", "min": 10, "collection": ["MTG Singles"]},
+            // ==== Pokemon Singles ====
+            {"name": "Pokémon Singles - Under and Including $0.50", "max": 0.5, "collection": ["Pokémon Singles"]},
+            {"name": "Pokémon Singles - $0.51 to $3.00", "min": 0.51, "max": 2.99, "collection": ["Pokémon Singles"]},
+            {"name": "Pokémon Singles - $3.01 to $10.00", "min": 3, "max": 9.99, "collection": ["Pokémon Singles"]},
+            {"name": "Pokémon Singles - Over $10.00", "min": 10, "collection": ["Pokémon Singles"]},
+            // ==== YuGiOh Singles ====
+            {"name": "Yugioh Singles - Under and Including $0.50", "max": 0.5, "collection": ["Yugioh Singles"]},
+            {"name": "Yugioh Singles - $0.51 to $3.00", "min": 0.51, "max": 2.99, "collection": ["Yugioh Singles"]},
+            {"name": "Yugioh Singles - $3.01 to $10.00", "min": 3, "max": 9.99, "collection": ["Yugioh Singles"]},
+            {"name": "Yugioh Singles - Over $10.00", "min": 10, "collection": ["Yugioh Singles"]},
+            // ==== One Piece ====
+            {"name": "One Piece Singles - Under and Including $0.50", "max": 0.5, "collection": ["One Piece Singles"]},
+            {"name": "One Piece Singles - $0.51 to $3.00", "min": 0.51, "max": 2.99, "collection": ["One Piece Singles"]},
+            {"name": "One Piece Singles - $3.01 to $10.00", "min": 3, "max": 9.99, "collection": ["One Piece Singles"]},
+            {"name": "One Piece Singles - Over $10.00", "min": 10, "collection": ["One Piece Singles"]},
+            // ==== Lorcana Singles ====
+            {"name": "Lorcana Singles - Under and Including $0.50", "max": 0.5, "collection": ["Lorcana Singles"]},
+            {"name": "Lorcana Singles - $0.51 to $3.00", "min": 0.51, "max": 2.99, "collection": ["Lorcana Singles"]},
+            {"name": "Lorcana Singles - $3.01 to $10.00", "min": 3, "max": 9.99, "collection": ["Lorcana Singles"]},
+            {"name": "Lorcana Singles - Over $10.00", "min": 10, "collection": ["Lorcana Singles"]},
+            // === Sorcery ===
+            {"name": "Sorcery Singles - Under and Including $0.50", "max": 0.5, "collection": ["Sorcery Singles"]},
+            {"name": "Sorcery Singles - $0.51 to $3.00", "min": 0.51, "max": 2.99, "collection": ["Sorcery Singles"]},
+            {"name": "Sorcery Singles - $3.01 to $10.00", "min": 3, "max": 9.99, "collection": ["Sorcery Singles"]},
+            {"name": "Sorcery Singles - Over $10.00", "min": 10, "collection": ["Sorcery Singles"]},
+            // === Flesh and Blood
+            {"name": "Flesh and Blood Singles - Under and Including $0.50", "max": 0.5, "collection": ["Flesh and Blood Singles"]},
+            {"name": "Flesh and Blood Singles - $0.51 to $3.00", "min": 0.51, "max": 2.99, "collection": ["Flesh and Blood Singles"]},
+            {"name": "Flesh and Blood Singles - $3.01 to $10.00", "min": 3, "max": 9.99, "collection": ["Flesh and Blood Singles"]},
+            {"name": "Flesh and Blood Singles - Over $10.00", "min": 10, "collection": ["Flesh and Blood Singles"]},
+            // ==== Shipping ====
+            {"name": "Shipping Products", "variant_ids": [42277454676139, 45167013494955, 42172855943339, 45250620489899, 44728401166507, 43398104285355, 45341396631723, 43014307053739]},
+            // ==== MTG Packs ====
+            {"name": "MTG Packs", "variant_ids": [42242026209451, 42038207053995, 44400988782763, 43901919232171]},
+            // ==== Comics ====
+            {"name": "Comics", "variant_ids": [43449742524587, 43449744359595, 43449747079339, 43449748160683, 43449751863467, 43449754058923, 43449756909739, 43449759760555]},
+            // ==== Drinks ====
+            {"name": "Drinks", "variant_ids": [36574139908257, 36573745021089, 36573812687009, 36573763043489, 36573626695841]},
+            // ==== Chocolate ====
+            {"name": "Chocolate", "variant_ids": [45034427777195, 45034422763691, 45034560061611, 45034436034731, 45034435412139, 45034515693739, 45034516873387, 45034517069995, 45034435838123, 45034418503851, 45034432954539]},
+        ];
+
+        let csvData = null;
+        let processedData = null;
+
+        // Display ranges
+        function displayRanges() {
+            const rangesList = document.getElementById('rangesList');
+            rangesList.innerHTML = DEFAULT_RANGES.map((range, idx) => {
+                let details = [];
+                if (range.min !== undefined || range.max !== undefined) {
+                    const minStr = range.min !== undefined ? `$${range.min}` : 'no min';
+                    const maxStr = range.max !== undefined ? `$${range.max}` : 'no max';
+                    details.push(`Range: ${minStr} - ${maxStr}`);
+                }
+                if (range.collection && range.collection.length > 0) {
+                    details.push(`Collections: ${range.collection.join(', ')}`);
+                }
+                if (range.variant_ids && range.variant_ids.length > 0) {
+                    details.push(`Variant IDs: ${range.variant_ids.length} items`);
+                }
+
+                return `
+                    <div class="range-item">
+                        <div class="range-name">${idx + 1}. ${range.name}</div>
+                        <div class="range-details">${details.join(' | ')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleConfig() {
+            const content = document.getElementById('configContent');
+            content.classList.toggle('collapsed');
+        }
+
+        // File upload handling
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('csvFile');
+        const fileNameDisplay = document.getElementById('fileName');
+        const processBtn = document.getElementById('processBtn');
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            fileNameDisplay.textContent = `Selected: ${file.name}`;
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => {
+                    csvData = results.data;
+                    processBtn.disabled = false;
+                    console.log('CSV loaded:', csvData.length, 'rows');
+                }
+            });
+        }
+
+        function getInventoryItemValue(row) {
+            const inventoryValue = parseFloat(row['Ending inventory retail value']) || 0;
+            const inventoryUnits = parseFloat(row['Ending inventory units']) || 0;
+
+            if (inventoryUnits === 0) return 0;
+            return inventoryValue / inventoryUnits;
+        }
+
+        function groupDuplicateProducts(data) {
+            const grouped = {};
+
+            data.forEach(row => {
+                const key = `${row['Product title']}|${row['Product variant ID']}|${row['Product variant title']}`;
+
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        'Product title': row['Product title'],
+                        'Product variant ID': row['Product variant ID'],
+                        'Product variant title': row['Product variant title'],
+                        'Ending inventory units': parseFloat(row['Ending inventory units']) || 0,
+                        'Ending inventory retail value': parseFloat(row['Ending inventory retail value']) || 0,
+                        'Product collection': [row['Product collection']]
+                    };
+                } else {
+                    if (!grouped[key]['Product collection'].includes(row['Product collection'])) {
+                        grouped[key]['Product collection'].push(row['Product collection']);
+                    }
+                }
+            });
+
+            return Object.values(grouped).map(item => ({
+                ...item,
+                'Inventory item value': getInventoryItemValue(item)
+            }));
+        }
+
+        function applyFilters(data, rangeConfig) {
+            return data.filter(row => {
+                // Filter out zero inventory
+                if (row['Ending inventory units'] <= 0) return false;
+
+                // Filter by min/max
+                const itemValue = row['Inventory item value'];
+                if (rangeConfig.min !== undefined && itemValue < rangeConfig.min) return false;
+                if (rangeConfig.max !== undefined && itemValue > rangeConfig.max) return false;
+
+                // Filter by collections
+                const collections = rangeConfig.collection || [];
+                if (collections.length > 0) {
+                    const rowCollections = row['Product collection'];
+                    const hasMatch = rowCollections.some(prodCol =>
+                        collections.some(filterCol =>
+                            String(prodCol).includes(filterCol)
+                        )
+                    );
+                    if (!hasMatch) return false;
+                }
+
+                // Filter by variant IDs
+                const variantIds = rangeConfig.variant_ids || [];
+                if (variantIds.length > 0) {
+                    const rowVariantId = String(row['Product variant ID']);
+                    const hasMatch = variantIds.some(vid =>
+                        rowVariantId.startsWith(String(vid))
+                    );
+                    if (!hasMatch) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function arrayToCSV(data, headers) {
+            const rows = [headers.join(',')];
+
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    let value = row[header];
+                    if (Array.isArray(value)) {
+                        value = value.join('; ');
+                    }
+                    value = String(value || '');
+                    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                        value = '"' + value.replace(/"/g, '""') + '"';
+                    }
+                    return value;
+                });
+                rows.push(values.join(','));
+            });
+
+            return rows.join('\n');
+        }
+
+        function downloadCSV(filename, csvContent) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+
+        async function processInventory() {
+            if (!csvData) return;
+
+            // Show progress
+            const progress = document.getElementById('progress');
+            const results = document.getElementById('results');
+            progress.classList.add('show');
+            results.classList.remove('show');
+
+            updateProgress(0, 'Starting processing...');
+            await sleep(100);
+
+            // Group duplicates
+            updateProgress(10, 'Grouping duplicate products...');
+            const grouped = groupDuplicateProducts(csvData);
+            await sleep(100);
+
+            // Filter out zero inventory
+            updateProgress(20, 'Filtering zero inventory items...');
+            const nonZero = grouped.filter(row => row['Ending inventory units'] > 0);
+            await sleep(100);
+
+            // Build summary
+            const summaryLines = [];
+            summaryLines.push('CSV INVENTORY SUMMARY REPORT');
+            summaryLines.push('='.repeat(50));
+            summaryLines.push('');
+            summaryLines.push('📊 | BASIC INVENTORY STATISTICS');
+            summaryLines.push('-'.repeat(30));
+            summaryLines.push(`Total number of unique products: ${nonZero.length}`);
+            summaryLines.push(`Original number of entries: ${csvData.length}`);
+            summaryLines.push(`Total ending inventory units: ${nonZero.reduce((sum, row) => sum + row['Ending inventory units'], 0).toLocaleString()}`);
+            summaryLines.push(`Total ending inventory retail value: $${nonZero.reduce((sum, row) => sum + row['Ending inventory retail value'], 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+            summaryLines.push('');
+            summaryLines.push('📈 | INVENTORY VALUE RANGES');
+            summaryLines.push('-'.repeat(30));
+
+            // Process each range
+            const filteredResults = [];
+            const headers = ['Product title', 'Product variant ID', 'Product variant title', 'Ending inventory units', 'Ending inventory retail value', 'Product collection', 'Inventory item value'];
+
+            for (let i = 0; i < DEFAULT_RANGES.length; i++) {
+                const rangeConfig = DEFAULT_RANGES[i];
+                const percent = 20 + ((i / DEFAULT_RANGES.length) * 70);
+                updateProgress(percent, `Processing range ${i + 1} of ${DEFAULT_RANGES.length}: ${rangeConfig.name}`);
+
+                const filtered = applyFilters(nonZero, rangeConfig);
+
+                const totalUnits = filtered.reduce((sum, row) => sum + row['Ending inventory units'], 0);
+                const totalValue = filtered.reduce((sum, row) => sum + row['Ending inventory retail value'], 0);
+                const avgItemValue = filtered.length > 0 ? filtered.reduce((sum, row) => sum + row['Inventory item value'], 0) / filtered.length : 0;
+
+                const collections = rangeConfig.collection || [];
+                const collectionStr = collections.length > 0 ? collections.join(', ') : 'All Collections';
+                const variantStr = rangeConfig.variant_ids ? ` | Variant IDs: ${rangeConfig.variant_ids.length}` : '';
+
+                summaryLines.push(`📦 ${rangeConfig.name}`);
+                summaryLines.push(`  Range: ${rangeConfig.min || 'no min'} - ${rangeConfig.max || 'no max'} | Collections: ${collectionStr}${variantStr}`);
+                summaryLines.push(`  • Total Units: ${totalUnits.toLocaleString()}`);
+                summaryLines.push(`  • Total Value: $${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+                summaryLines.push(`  • Number of Products: ${filtered.length}`);
+                summaryLines.push(`  • Average Item Value: $${avgItemValue.toFixed(2)}`);
+                summaryLines.push('');
+
+                // Store for download
+                const collectionFileStr = collections.length > 0 ? collections.join('_').replace(/ /g, '-') : 'collectionAll';
+                const minStr = rangeConfig.min !== undefined ? `min${rangeConfig.min}` : 'minNone';
+                const maxStr = rangeConfig.max !== undefined ? `max${rangeConfig.max}` : 'maxNone';
+                const filename = `filtered_${minStr}_${maxStr}_${collectionFileStr}_${rangeConfig.name.replace(/ /g, '-')}.csv`;
+
+                filteredResults.push({
+                    filename,
+                    data: filtered,
+                    headers
+                });
+
+                await sleep(50);
+            }
+
+            updateProgress(95, 'Generating download files...');
+
+            // Add grouped inventory
+            filteredResults.push({
+                filename: 'grouped_inventory.csv',
+                data: nonZero,
+                headers
+            });
+
+            processedData = {
+                filteredResults,
+                summary: summaryLines.join('\n')
+            };
+
+            updateProgress(100, 'Processing complete!');
+            await sleep(500);
+
+            displayResults();
+        }
+
+        function displayResults() {
+            const results = document.getElementById('results');
+            const downloadButtons = document.getElementById('downloadButtons');
+            const summary = document.getElementById('summary');
+
+            // Create download buttons
+            downloadButtons.innerHTML = processedData.filteredResults.map((result, idx) =>
+                `<button class="download-btn" onclick="downloadResult(${idx})">📥 ${result.filename}</button>`
+            ).join('');
+
+            // Add summary download
+            downloadButtons.innerHTML += `<button class="download-btn" onclick="downloadSummary()">📥 inventory_summary.txt</button>`;
+
+            // Display summary
+            summary.textContent = processedData.summary;
+
+            // Show results
+            document.getElementById('progress').classList.remove('show');
+            results.classList.add('show');
+        }
+
+        function downloadResult(index) {
+            const result = processedData.filteredResults[index];
+            const csv = arrayToCSV(result.data, result.headers);
+            downloadCSV(result.filename, csv);
+        }
+
+        function downloadSummary() {
+            const blob = new Blob([processedData.summary], { type: 'text/plain;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'inventory_summary.txt';
+            link.click();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize
+        displayRanges();
+    </script>
+</body>
+</html>
